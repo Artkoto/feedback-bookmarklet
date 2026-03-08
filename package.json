@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "Bookmarklet de feedback visuel — cliquer sur un composant, commenter, copier",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "serve": "node server.js"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "terser": "^5.46.0"
+  }
 }
