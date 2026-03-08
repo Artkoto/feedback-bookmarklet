@@ -57,8 +57,24 @@
     '#__ef-toolbar__ .ef-btn-panel:hover{background:#334155;color:#f8fafc}',
     '#__ef-toolbar__ .ef-btn-panel.has-items{color:#f8fafc}',
     '#__ef-toolbar__ .ef-badge{position:absolute;top:-5px;right:-5px;background:#6366f1;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center}',
+    '#__ef-toolbar__ .ef-btn-help{background:transparent;color:#475569;font-size:13px;padding:4px 8px;border-radius:50%!important;width:26px;height:26px;display:flex;align-items:center;justify-content:center}',
+    '#__ef-toolbar__ .ef-btn-help:hover{background:#1e293b;color:#f8fafc}',
     '#__ef-toolbar__ .ef-btn-close{background:transparent;color:#475569;font-size:14px;padding:4px 8px}',
     '#__ef-toolbar__ .ef-btn-close:hover{color:#f8fafc}',
+    // Help modal
+    '#__ef-help__{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}',
+    '#__ef-help__ .ef-help-dialog{background:#0f172a;color:#f8fafc;border-radius:16px;padding:28px;width:560px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.5);font-family:system-ui,sans-serif}',
+    '#__ef-help__ h2{margin:0 0 4px;font-size:16px;color:#f8fafc}',
+    '#__ef-help__ .ef-help-sub{margin:0 0 20px;font-size:11px;color:#475569}',
+    '#__ef-help__ h3{margin:16px 0 8px;font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em}',
+    '#__ef-help__ .ef-help-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}',
+    '#__ef-help__ .ef-help-icon{font-size:16px;min-width:24px;text-align:center;margin-top:1px}',
+    '#__ef-help__ .ef-help-text{font-size:12px;color:#cbd5e1;line-height:1.5}',
+    '#__ef-help__ .ef-help-text strong{color:#f8fafc}',
+    '#__ef-help__ kbd{display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:1px 6px;font-size:10px;font-family:monospace;color:#e2e8f0}',
+    '#__ef-help__ .ef-help-sep{height:1px;background:#1e293b;margin:14px 0}',
+    '#__ef-help__ .ef-help-close{display:block;margin:20px auto 0;border:none;border-radius:8px;padding:9px 24px;cursor:pointer;font:600 12px system-ui;background:#1e293b;color:#94a3b8}',
+    '#__ef-help__ .ef-help-close:hover{background:#334155;color:#f8fafc}',
     '.__ef-hover__{outline:2px dashed #6366f1 !important;outline-offset:2px !important;cursor:crosshair !important;background-color:rgba(99,102,241,.07) !important}',
     '.__ef-selected__{outline:2px solid #6366f1 !important;outline-offset:2px !important;background-color:rgba(99,102,241,.12) !important}',
     '.__ef-free-cursor__ *{cursor:crosshair !important}',
@@ -183,10 +199,12 @@
       '<button class="ef-btn-select' + (state.mode === 'select' ? ' active' : '') + '">' + (state.mode === 'select' ? '✋ Stop' : '🎯 Composant') + '</button>' +
       '<button class="ef-btn-free' + (state.mode === 'free' ? ' active' : '') + '">' + (state.mode === 'free' ? '✋ Stop' : '✏️ Libre') + '</button>' +
       '<button class="ef-btn-panel' + (n > 0 ? ' has-items' : '') + '">📋 Historique' + (n > 0 ? ' <span class="ef-badge">' + n + '</span>' : '') + '</button>' +
+      '<button class="ef-btn-help" title="Aide">?</button>' +
       '<button class="ef-btn-close">✕</button>';
     toolbar.querySelector('.ef-btn-select').onclick = function() { setMode(state.mode === 'select' ? null : 'select'); };
     toolbar.querySelector('.ef-btn-free').onclick   = function() { setMode(state.mode === 'free' ? null : 'free'); };
     toolbar.querySelector('.ef-btn-panel').onclick  = togglePanel;
+    toolbar.querySelector('.ef-btn-help').onclick   = showHelp;
     toolbar.querySelector('.ef-btn-close').onclick  = destroy;
   }
 
@@ -719,6 +737,59 @@
   // ─── Utils ────────────────────────────────────────────────────────────────
   function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
   function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // ─── Aide ─────────────────────────────────────────────────────────────────
+  function showHelp() {
+    var existing = document.getElementById('__ef-help__');
+    if (existing) { existing.remove(); return; }
+    var el = document.createElement('div');
+    el.id = '__ef-help__';
+    el.innerHTML =
+      '<div class="ef-help-dialog">' +
+        '<h2>💬 Manuel — Outil de Feedback</h2>' +
+        '<p class="ef-help-sub">Version 1.1 — ENPICE</p>' +
+
+        '<h3>Activation</h3>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">⌥</span><div class="ef-help-text"><strong>Option (⌥) + F</strong> dans Chrome — active ou masque la toolbar via l\'extension.</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">🔖</span><div class="ef-help-text"><strong>Favori bookmarklet</strong> — cliquer sur le favori dans la barre du navigateur.</div></div>' +
+
+        '<div class="ef-help-sep"></div>' +
+
+        '<h3>Modes de saisie</h3>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">🎯</span><div class="ef-help-text"><strong>Composant</strong> — survolez la page pour cibler des éléments. Cliquez pour les ajouter au panier. Vous pouvez sélectionner <em>plusieurs composants</em> puis confirmer avec <kbd>✏️ Feedback</kbd>. Recliquez un composant sélectionné pour le retirer.</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">✏️</span><div class="ef-help-text"><strong>Libre</strong> — cliquez n\'importe où sur la page pour annoter une position précise (coordonnées X/Y enregistrées).</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">✋</span><div class="ef-help-text"><strong>Stop</strong> — recliquez le bouton actif pour quitter le mode de saisie.</div></div>' +
+
+        '<div class="ef-help-sep"></div>' +
+
+        '<h3>Formulaire de feedback</h3>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">🐛</span><div class="ef-help-text"><strong>Type</strong> : Bug · Suggestion · Design · Question</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">🔴</span><div class="ef-help-text"><strong>Priorité</strong> : Haute · Moyenne · Basse</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">➕</span><div class="ef-help-text"><strong>Ajouter des composants</strong> — en cours d\'édition, revenir en mode sélection pour ajouter d\'autres composants ciblés.</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">⬇</span><div class="ef-help-text"><strong>Réduire</strong> — met le formulaire en <em>draft</em> (puce orange en haut). Cliquez la puce pour reprendre.</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">⌨️</span><div class="ef-help-text"><kbd>Échap</kbd> réduit en draft &nbsp;·&nbsp; <kbd>⌘ Entrée</kbd> / <kbd>Ctrl Entrée</kbd> sauvegarde directement.</div></div>' +
+
+        '<div class="ef-help-sep"></div>' +
+
+        '<h3>Historique (📋)</h3>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">✔️</span><div class="ef-help-text"><strong>Cases à cocher</strong> — sélectionnez un ou plusieurs feedbacks pour les copier ou les supprimer en lot.</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">✏️</span><div class="ef-help-text"><strong>Modifier</strong> — rouvre le formulaire pré-rempli. Modifiez le commentaire, le type, la priorité ou les composants ciblés.</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">📋</span><div class="ef-help-text"><strong>Copier</strong> — copie un feedback en Markdown prêt à coller dans Claude Code ou un ticket.</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">🗑️</span><div class="ef-help-text"><strong>Supprimer</strong> — confirmation inline, les numéros sont réassignés automatiquement (1..n).</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">💾</span><div class="ef-help-text"><strong>Persistance</strong> — les annotations sont sauvegardées dans <kbd>localStorage</kbd> et survivent au rechargement de la page.</div></div>' +
+
+        '<div class="ef-help-sep"></div>' +
+
+        '<h3>Marqueurs visuels</h3>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">🔴</span><div class="ef-help-text">Pastilles numérotées sur la page — couleur selon le type (rouge=Bug, violet=Suggestion, orange=Design, bleu=Question). Disparaissent à la fermeture de l\'outil.</div></div>' +
+
+        '<button class="ef-help-close">Fermer</button>' +
+      '</div>';
+
+    el.querySelector('.ef-help-close').onclick = function() { el.remove(); };
+    el.onclick = function(e) { if (e.target === el) el.remove(); };
+    document.body.appendChild(el);
+  }
 
   // ─── Destroy / Toggle ─────────────────────────────────────────────────────
   function toggle() { toolbar.style.display = toolbar.style.display === 'none' ? '' : 'none'; }
