@@ -1,0 +1,9 @@
+{
+  "name": "feedback-bookmarklet",
+  "version": "1.0.0",
+  "description": "Bookmarklet de feedback visuel — cliquer sur un composant, commenter, copier",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "private": true
+}
