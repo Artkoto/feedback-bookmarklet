@@ -100,6 +100,9 @@
     '#__ef-panel__ .ef-sel-actions button{border:none;border-radius:5px;padding:4px 9px;cursor:pointer;font:600 10px system-ui}',
     '#__ef-panel__ .ef-btn-copy-sel{background:#6366f1;color:#fff}',
     '#__ef-panel__ .ef-btn-copy-sel:disabled{background:#334155;color:#475569;cursor:default}',
+    '#__ef-panel__ .ef-btn-del-sel{background:#7f1d1d;color:#fca5a5}',
+    '#__ef-panel__ .ef-btn-del-sel:hover:not(:disabled){background:#ef4444;color:#fff}',
+    '#__ef-panel__ .ef-btn-del-sel:disabled{background:#334155;color:#475569;cursor:default}',
     '#__ef-panel__ .ef-btn-sel-all{background:#1e293b;color:#94a3b8;border:1px solid #334155 !important}',
     '#__ef-panel__ .ef-btn-sel-all:hover{color:#f8fafc}',
     '#__ef-panel__ .ef-item-dot{width:20px;height:20px;min-width:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 9px system-ui;color:#fff;margin-top:1px}',
@@ -500,7 +503,8 @@
           '<span class="ef-sel-info">0 sélectionné</span>' +
           '<div class="ef-sel-actions">' +
             '<button class="ef-btn-sel-all">Tout sélectionner</button>' +
-            '<button class="ef-btn-copy-sel" disabled>📋 Copier la sélection</button>' +
+            '<button class="ef-btn-copy-sel" disabled>📋 Copier</button>' +
+            '<button class="ef-btn-del-sel" disabled>🗑️ Supprimer</button>' +
           '</div>' +
         '</div>'
       : '';
@@ -524,16 +528,21 @@
       renderToolbar(); renderPanel();
     });
     // ── Sélection multiple ──
-    var selInfo   = panel.querySelector('.ef-sel-info');
-    var btnSelAll = panel.querySelector('.ef-btn-sel-all');
+    var selInfo    = panel.querySelector('.ef-sel-info');
+    var btnSelAll  = panel.querySelector('.ef-btn-sel-all');
     var btnCopySel = panel.querySelector('.ef-btn-copy-sel');
+    var btnDelSel  = panel.querySelector('.ef-btn-del-sel');
+
+    function getSelectedIds() {
+      return [].map.call(panel.querySelectorAll('.ef-item-check:checked'), function(cb){ return Number(cb.getAttribute('data-id')); });
+    }
 
     function updateSelBar() {
       if (!selInfo) return;
-      var checked = panel.querySelectorAll('.ef-item-check:checked');
-      var n = checked.length;
+      var n = panel.querySelectorAll('.ef-item-check:checked').length;
       selInfo.textContent = n + ' sélectionné' + (n > 1 ? 's' : '');
       btnCopySel.disabled = n === 0;
+      btnDelSel.disabled  = n === 0;
       var allChecked = n === state.annotations.length && n > 0;
       if (btnSelAll) btnSelAll.textContent = allChecked ? 'Tout désélectionner' : 'Tout sélectionner';
       panel.querySelectorAll('.ef-item').forEach(function(item){
@@ -549,13 +558,23 @@
     });
 
     if (btnCopySel) btnCopySel.addEventListener('click', function(){
-      var ids = [].map.call(panel.querySelectorAll('.ef-item-check:checked'), function(cb){ return Number(cb.getAttribute('data-id')); });
+      var ids = getSelectedIds();
       var selected = state.annotations.filter(function(a){ return ids.indexOf(a.id) > -1; });
       if (!selected.length) return;
       var text = selected.map(formatAnnotation).join('\n\n---\n\n');
       try { navigator.clipboard.writeText(text).catch(function(){ copyText(text); }); }
       catch(e) { copyText(text); }
       showToast('📋 ' + selected.length + ' annotation(s) copiée(s) !');
+    });
+
+    if (btnDelSel) btnDelSel.addEventListener('click', function(){
+      var ids = getSelectedIds();
+      if (!ids.length) return;
+      if (!confirm('Supprimer les ' + ids.length + ' feedback(s) sélectionné(s) ?')) return;
+      ids.forEach(function(id){ removeDot(id); });
+      state.annotations = state.annotations.filter(function(a){ return ids.indexOf(a.id) === -1; });
+      lsSave();
+      renderToolbar(); renderPanel();
     });
 
     panel.querySelectorAll('.ef-item-check').forEach(function(cb){
