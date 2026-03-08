@@ -89,8 +89,19 @@
     '#__ef-panel__ .ef-btn-clear:hover{background:#334155;color:#f8fafc}',
     '#__ef-panel__ .ef-panel-body{max-height:320px;overflow-y:auto;padding:8px 0}',
     '#__ef-panel__ .ef-panel-empty{padding:24px;text-align:center;color:#475569;font-size:12px}',
-    '#__ef-panel__ .ef-item{padding:10px 16px;border-bottom:1px solid #1e293b;display:flex;gap:10px;align-items:flex-start}',
+    '#__ef-panel__ .ef-item{padding:10px 16px;border-bottom:1px solid #1e293b;display:flex;gap:10px;align-items:flex-start;transition:background .1s}',
+    '#__ef-panel__ .ef-item.selected{background:#1e293b}',
     '#__ef-panel__ .ef-item:last-child{border-bottom:none}',
+    '#__ef-panel__ .ef-item-check{appearance:none;width:14px;height:14px;min-width:14px;border:1.5px solid #334155;border-radius:3px;cursor:pointer;margin-top:3px;background:#0f172a;transition:all .15s}',
+    '#__ef-panel__ .ef-item-check:checked{background:#6366f1;border-color:#6366f1}',
+    '#__ef-panel__ .ef-sel-bar{padding:8px 16px;background:#1e293b;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155}',
+    '#__ef-panel__ .ef-sel-info{font:600 10px system-ui;color:#94a3b8}',
+    '#__ef-panel__ .ef-sel-actions{display:flex;gap:6px}',
+    '#__ef-panel__ .ef-sel-actions button{border:none;border-radius:5px;padding:4px 9px;cursor:pointer;font:600 10px system-ui}',
+    '#__ef-panel__ .ef-btn-copy-sel{background:#6366f1;color:#fff}',
+    '#__ef-panel__ .ef-btn-copy-sel:disabled{background:#334155;color:#475569;cursor:default}',
+    '#__ef-panel__ .ef-btn-sel-all{background:#1e293b;color:#94a3b8;border:1px solid #334155 !important}',
+    '#__ef-panel__ .ef-btn-sel-all:hover{color:#f8fafc}',
     '#__ef-panel__ .ef-item-dot{width:20px;height:20px;min-width:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 9px system-ui;color:#fff;margin-top:1px}',
     '#__ef-panel__ .ef-item-dot.bug{background:#ef4444}',
     '#__ef-panel__ .ef-item-dot.suggestion{background:#6366f1}',
@@ -105,8 +116,11 @@
     '#__ef-panel__ .ef-item-prio.basse{background:#f0fdf4;color:#22c55e}',
     '#__ef-panel__ .ef-item-comment{font-size:11px;color:#94a3b8;line-height:1.4;word-break:break-word}',
     '#__ef-panel__ .ef-item-actions{display:flex;gap:4px;flex-shrink:0}',
+    '#__ef-panel__ .ef-item-actions{display:flex;gap:4px;flex-shrink:0}',
     '#__ef-panel__ .ef-item-copy{background:none;border:none;color:#6366f1;cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px}',
     '#__ef-panel__ .ef-item-copy:hover{background:#1e293b;color:#818cf8}',
+    '#__ef-panel__ .ef-item-edit{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px}',
+    '#__ef-panel__ .ef-item-edit:hover{background:#1e293b;color:#f8fafc}',
     '#__ef-panel__ .ef-item-delete{background:none;border:none;color:#334155;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px}',
     '#__ef-panel__ .ef-item-delete:hover{color:#ef4444;background:#1e293b}',
     '#__ef-toast__{position:fixed;bottom:88px;right:24px;z-index:2147483647;background:#22c55e;color:#fff;border-radius:10px;padding:10px 16px;font:600 12px system-ui;box-shadow:0 4px 16px rgba(0,0,0,.3);animation:ef-toast-in .2s ease}',
@@ -308,6 +322,82 @@
     };
   }
 
+  // ─── Modal édition ───────────────────────────────────────────────────────
+  function showEditModal(a) {
+    var modal = document.createElement('div');
+    modal.id = '__ef-modal__';
+
+    var metaHtml = '';
+    if (!a.free) {
+      metaHtml = '<div class="ef-meta">' +
+        (a.component ? '<div>Composant : <code>' + a.component + '</code></div>' : '') +
+        (a.cssPath   ? '<div>Sélecteur : <code>' + a.cssPath + '</code></div>' : '') +
+        (a.snippet   ? '<div>Contenu : <code>' + escHtml(a.snippet) + '</code></div>' : '') +
+        '</div>';
+    }
+
+    modal.innerHTML =
+      '<div class="ef-dialog">' +
+        '<h3>✏️ Modifier feedback #' + a.id + '</h3>' +
+        '<p class="ef-subtitle">Page : ' + a.page + '</p>' +
+        metaHtml +
+        '<div class="ef-row">' +
+          '<div class="ef-field"><label>Type</label>' +
+            '<select id="__ef-type__">' +
+              '<option value="bug"' + (a.type==='bug' ? ' selected' : '') + '>🐛 Bug</option>' +
+              '<option value="suggestion"' + (a.type==='suggestion' ? ' selected' : '') + '>💡 Suggestion</option>' +
+              '<option value="design"' + (a.type==='design' ? ' selected' : '') + '>🎨 Design</option>' +
+              '<option value="question"' + (a.type==='question' ? ' selected' : '') + '>❓ Question</option>' +
+            '</select></div>' +
+          '<div class="ef-field"><label>Priorité</label>' +
+            '<select id="__ef-priority__">' +
+              '<option value="haute"' + (a.priority==='haute' ? ' selected' : '') + '>🔴 Haute</option>' +
+              '<option value="moyenne"' + (a.priority==='moyenne' ? ' selected' : '') + '>🟡 Moyenne</option>' +
+              '<option value="basse"' + (a.priority==='basse' ? ' selected' : '') + '>🟢 Basse</option>' +
+            '</select></div>' +
+        '</div>' +
+        '<div><label>Commentaire</label>' +
+          '<textarea id="__ef-comment__" placeholder="Décrivez le problème ou le changement souhaité…">' + escHtml(a.comment) + '</textarea>' +
+        '</div>' +
+        '<div class="ef-actions">' +
+          '<button class="ef-cancel">Annuler</button>' +
+          '<button class="ef-copy">💾 Sauvegarder</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(modal);
+
+    var textarea  = modal.querySelector('#__ef-comment__');
+    var btnSave   = modal.querySelector('.ef-copy');
+    var btnCancel = modal.querySelector('.ef-cancel');
+
+    setTimeout(function(){ textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); }, 50);
+
+    modal.onclick = function(e){ if (e.target === modal) modal.remove(); };
+    btnCancel.onclick = function(){ modal.remove(); };
+    textarea.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') modal.remove();
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) btnSave.click();
+    });
+
+    btnSave.onclick = function(){
+      var comment = textarea.value.trim();
+      if (!comment) { textarea.focus(); return; }
+      a.type     = modal.querySelector('#__ef-type__').value;
+      a.priority = modal.querySelector('#__ef-priority__').value;
+      a.comment  = comment;
+      // Mettre à jour le dot couleur
+      if (dots[a.id]) {
+        dots[a.id].className = '__ef-dot__ ' + a.type;
+      }
+      lsSave();
+      modal.remove();
+      renderToolbar();
+      if (state.panelOpen) renderPanel();
+      showToast('💾 Feedback #' + a.id + ' mis à jour !');
+    };
+  }
+
   // ─── Format & Copy ───────────────────────────────────────────────────────
   function formatAnnotation(a) {
     var icon = TYPE_ICONS[a.type] || '📌';
@@ -383,7 +473,8 @@
     var itemsHtml = state.annotations.length === 0
       ? '<div class="ef-panel-empty">Aucune annotation pour l\'instant.</div>'
       : state.annotations.map(function(a){
-          return '<div class="ef-item">' +
+          return '<div class="ef-item" data-id="' + a.id + '">' +
+            '<input type="checkbox" class="ef-item-check" data-id="' + a.id + '">' +
             '<div class="ef-item-dot ' + a.type + '">' + a.id + '</div>' +
             '<div class="ef-item-body">' +
               '<div class="ef-item-top">' +
@@ -393,14 +484,25 @@
               '<div class="ef-item-comment">' + escHtml(a.comment) + '</div>' +
             '</div>' +
             '<div class="ef-item-actions">' +
+              '<button class="ef-item-edit" data-id="' + a.id + '" title="Modifier">✏️</button>' +
               '<button class="ef-item-copy" data-id="' + a.id + '" title="Copier">📋</button>' +
               '<button class="ef-item-delete" data-id="' + a.id + '" title="Supprimer">✕</button>' +
             '</div>' +
           '</div>';
         }).join('');
 
-    var actionsHtml = state.annotations.length > 0
+    var hasItems = state.annotations.length > 0;
+    var actionsHtml = hasItems
       ? '<button class="ef-btn-copy-all">Copier tout</button><button class="ef-btn-clear">Effacer</button>'
+      : '';
+    var selBarHtml = hasItems
+      ? '<div class="ef-sel-bar">' +
+          '<span class="ef-sel-info">0 sélectionné</span>' +
+          '<div class="ef-sel-actions">' +
+            '<button class="ef-btn-sel-all">Tout sélectionner</button>' +
+            '<button class="ef-btn-copy-sel" disabled>📋 Copier la sélection</button>' +
+          '</div>' +
+        '</div>'
       : '';
 
     panel.innerHTML =
@@ -408,6 +510,7 @@
         '<span class="ef-panel-title">📋 Annotations (' + state.annotations.length + ')</span>' +
         '<div class="ef-panel-actions">' + actionsHtml + '</div>' +
       '</div>' +
+      selBarHtml +
       '<div class="ef-panel-body">' + itemsHtml + '</div>';
 
     var btnCopyAll = panel.querySelector('.ef-btn-copy-all');
@@ -420,6 +523,52 @@
       lsClear();
       renderToolbar(); renderPanel();
     });
+    // ── Sélection multiple ──
+    var selInfo   = panel.querySelector('.ef-sel-info');
+    var btnSelAll = panel.querySelector('.ef-btn-sel-all');
+    var btnCopySel = panel.querySelector('.ef-btn-copy-sel');
+
+    function updateSelBar() {
+      if (!selInfo) return;
+      var checked = panel.querySelectorAll('.ef-item-check:checked');
+      var n = checked.length;
+      selInfo.textContent = n + ' sélectionné' + (n > 1 ? 's' : '');
+      btnCopySel.disabled = n === 0;
+      var allChecked = n === state.annotations.length && n > 0;
+      if (btnSelAll) btnSelAll.textContent = allChecked ? 'Tout désélectionner' : 'Tout sélectionner';
+      panel.querySelectorAll('.ef-item').forEach(function(item){
+        var cb = item.querySelector('.ef-item-check');
+        item.classList.toggle('selected', cb && cb.checked);
+      });
+    }
+
+    if (btnSelAll) btnSelAll.addEventListener('click', function(){
+      var allChecked = panel.querySelectorAll('.ef-item-check:checked').length === state.annotations.length;
+      panel.querySelectorAll('.ef-item-check').forEach(function(cb){ cb.checked = !allChecked; });
+      updateSelBar();
+    });
+
+    if (btnCopySel) btnCopySel.addEventListener('click', function(){
+      var ids = [].map.call(panel.querySelectorAll('.ef-item-check:checked'), function(cb){ return Number(cb.getAttribute('data-id')); });
+      var selected = state.annotations.filter(function(a){ return ids.indexOf(a.id) > -1; });
+      if (!selected.length) return;
+      var text = selected.map(formatAnnotation).join('\n\n---\n\n');
+      try { navigator.clipboard.writeText(text).catch(function(){ copyText(text); }); }
+      catch(e) { copyText(text); }
+      showToast('📋 ' + selected.length + ' annotation(s) copiée(s) !');
+    });
+
+    panel.querySelectorAll('.ef-item-check').forEach(function(cb){
+      cb.addEventListener('change', updateSelBar);
+    });
+
+    panel.querySelectorAll('.ef-item-edit').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = Number(btn.getAttribute('data-id'));
+        var a = state.annotations.find(function(x){ return x.id === id; });
+        if (a) showEditModal(a);
+      });
+    });
     panel.querySelectorAll('.ef-item-copy').forEach(function(btn){
       btn.addEventListener('click', function(){
         var id = Number(btn.getAttribute('data-id'));
@@ -430,6 +579,7 @@
     panel.querySelectorAll('.ef-item-delete').forEach(function(btn){
       btn.addEventListener('click', function(){
         var id = Number(btn.getAttribute('data-id'));
+        if (!confirm('Supprimer le feedback #' + id + ' ?')) return;
         state.annotations = state.annotations.filter(function(a){ return a.id !== id; });
         removeDot(id);
         lsSave();
