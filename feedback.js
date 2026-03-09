@@ -2,7 +2,8 @@
   if (window.__enpiceFeedback__) { window.__enpiceFeedback__.toggle(); return; }
 
   // ─── localStorage ─────────────────────────────────────────────────────────
-  var LS_KEY = '__ef_annotations__';
+  var LS_KEY     = '__ef_annotations__';
+  var LS_POS_KEY = '__ef_toolbar_pos__';
   function lsSave() {
     try { localStorage.setItem(LS_KEY, JSON.stringify({ annotations: state.annotations })); } catch(e) {}
   }
@@ -15,9 +16,11 @@
     } catch(e) {}
   }
   function lsClear() { try { localStorage.removeItem(LS_KEY); } catch(e) {} }
+  function lsSavePos(x, y) { try { localStorage.setItem(LS_POS_KEY, JSON.stringify({ x: x, y: y })); } catch(e) {} }
+  function lsLoadPos() { try { var r = localStorage.getItem(LS_POS_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
 
   // ─── State ────────────────────────────────────────────────────────────────
-  var state = { mode: null, annotations: [], panelOpen: false, basket: [], draft: null };
+  var state = { mode: null, annotations: [], panelOpen: false, basket: [], draft: null, selectPaused: false };
   lsLoad();
 
   // Prochain ID : max existant + 1 (jamais de collision)
@@ -42,7 +45,13 @@
   var style = document.createElement('style');
   style.id = '__ef-style__';
   style.textContent = [
-    '#__ef-toolbar__{position:fixed;bottom:24px;right:24px;z-index:2147483640;background:#0f172a;color:#f8fafc;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:8px;font:600 12px/1 system-ui,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.5);user-select:none}',
+    '#__ef-toolbar__{position:fixed;z-index:2147483640;background:#0f172a;color:#f8fafc;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:6px;font:600 12px/1 system-ui,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.5);user-select:none}',
+    '#__ef-toolbar__.compact{flex-direction:column;padding:8px;gap:4px;border-radius:12px}',
+    '#__ef-toolbar__.compact button{width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:8px}',
+    '#__ef-toolbar__.compact .ef-drag-handle{padding:4px 0;width:100%;text-align:center;font-size:14px}',
+    '#__ef-toolbar__.compact .ef-badge{top:-4px;right:-4px}',
+    '#__ef-toolbar__ .ef-drag-handle{cursor:grab;color:#334155;font-size:13px;padding:0 4px 0 0;line-height:1}',
+    '#__ef-toolbar__ .ef-drag-handle:active{cursor:grabbing}',
     '#__ef-toolbar__ .ef-logo{font-size:16px}',
     '#__ef-toolbar__ .ef-label{color:#94a3b8;font-size:11px}',
     '#__ef-toolbar__ .ef-sep{width:1px;height:20px;background:#1e293b}',
@@ -57,6 +66,10 @@
     '#__ef-toolbar__ .ef-btn-panel:hover{background:#334155;color:#f8fafc}',
     '#__ef-toolbar__ .ef-btn-panel.has-items{color:#f8fafc}',
     '#__ef-toolbar__ .ef-badge{position:absolute;top:-5px;right:-5px;background:#6366f1;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center}',
+    '#__ef-toolbar__ .ef-btn-pause{background:#f59e0b;color:#0f172a;font-size:11px}',
+    '#__ef-toolbar__ .ef-btn-pause:hover{background:#d97706}',
+    '#__ef-toolbar__ .ef-btn-pause.paused{background:#22c55e;color:#fff}',
+    '#__ef-toolbar__ .ef-btn-pause.paused:hover{background:#16a34a}',
     '#__ef-toolbar__ .ef-btn-help{background:transparent;color:#475569;font-size:13px;padding:4px 8px;border-radius:50%!important;width:26px;height:26px;display:flex;align-items:center;justify-content:center}',
     '#__ef-toolbar__ .ef-btn-help:hover{background:#1e293b;color:#f8fafc}',
     '#__ef-toolbar__ .ef-btn-close{background:transparent;color:#475569;font-size:14px;padding:4px 8px}',
@@ -75,6 +88,7 @@
     '#__ef-help__ .ef-help-sep{height:1px;background:#1e293b;margin:14px 0}',
     '#__ef-help__ .ef-help-close{display:block;margin:20px auto 0;border:none;border-radius:8px;padding:9px 24px;cursor:pointer;font:600 12px system-ui;background:#1e293b;color:#94a3b8}',
     '#__ef-help__ .ef-help-close:hover{background:#334155;color:#f8fafc}',
+    '#__ef-tooltip__{position:fixed;z-index:2147483648;background:rgba(15,23,42,.85);color:#e2e8f0;border-radius:6px;padding:5px 10px;font:600 11px/1.5 monospace;pointer-events:none;white-space:nowrap;backdrop-filter:blur(4px);border:1px solid rgba(99,102,241,.3);max-width:420px;overflow:hidden;text-overflow:ellipsis}',
     '.__ef-hover__{outline:2px dashed #6366f1 !important;outline-offset:2px !important;cursor:crosshair !important;background-color:rgba(99,102,241,.07) !important}',
     '.__ef-selected__{outline:2px solid #6366f1 !important;outline-offset:2px !important;background-color:rgba(99,102,241,.12) !important}',
     '.__ef-free-cursor__ *{cursor:crosshair !important}',
@@ -180,7 +194,7 @@
     '#__ef-panel__ .ef-confirm .ef-confirm-yes{border:none;border-radius:4px;padding:3px 8px;cursor:pointer;font:600 10px system-ui;background:#ef4444;color:#fff}',
     '#__ef-panel__ .ef-confirm .ef-confirm-no{border:none;border-radius:4px;padding:3px 8px;cursor:pointer;font:600 10px system-ui;background:#1e293b;color:#94a3b8}',
     // Toast
-    '#__ef-toast__{position:fixed;bottom:88px;right:24px;z-index:2147483647;background:#22c55e;color:#fff;border-radius:10px;padding:10px 16px;font:600 12px system-ui;box-shadow:0 4px 16px rgba(0,0,0,.3);animation:ef-toast-in .2s ease}',
+    '#__ef-toast__{position:fixed;top:16px;left:16px;z-index:2147483647;background:#22c55e;color:#fff;border-radius:10px;padding:10px 16px;font:600 12px system-ui;box-shadow:0 4px 16px rgba(0,0,0,.3);animation:ef-toast-in .2s ease}',
     '@keyframes ef-toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}',
   ].join('');
   document.head.appendChild(style);
@@ -192,20 +206,80 @@
 
   function renderToolbar() {
     var n = state.annotations.length;
+    var compact = window.innerWidth < 480;
+    toolbar.className = compact ? 'compact' : '';
+    var pauseBtn = state.mode === 'select'
+      ? '<button class="ef-btn-pause' + (state.selectPaused ? ' paused' : '') + '" title="' + (state.selectPaused ? 'Reprendre' : 'Pause') + '">' + (state.selectPaused ? '▶' : '⏸') + (compact ? '' : (state.selectPaused ? ' Reprendre' : ' Pause')) + '</button>'
+      : '';
     toolbar.innerHTML =
-      '<span class="ef-logo">💬</span>' +
-      '<span class="ef-label">Feedback</span>' +
-      '<span class="ef-sep"></span>' +
-      '<button class="ef-btn-select' + (state.mode === 'select' ? ' active' : '') + '">' + (state.mode === 'select' ? '✋ Stop' : '🎯 Composant') + '</button>' +
-      '<button class="ef-btn-free' + (state.mode === 'free' ? ' active' : '') + '">' + (state.mode === 'free' ? '✋ Stop' : '✏️ Libre') + '</button>' +
-      '<button class="ef-btn-panel' + (n > 0 ? ' has-items' : '') + '">📋 Historique' + (n > 0 ? ' <span class="ef-badge">' + n + '</span>' : '') + '</button>' +
+      '<span class="ef-drag-handle" title="Déplacer">⠿</span>' +
+      (compact ? '' : '<span class="ef-logo">💬</span><span class="ef-label">Feedback</span><span class="ef-sep"></span>') +
+      '<button class="ef-btn-select' + (state.mode === 'select' ? ' active' : '') + '" title="Composant">' + (state.mode === 'select' ? '✋' : '🎯') + (compact ? '' : (state.mode === 'select' ? ' Stop' : ' Composant')) + '</button>' +
+      pauseBtn +
+      '<button class="ef-btn-free' + (state.mode === 'free' ? ' active' : '') + '" title="Libre">' + (state.mode === 'free' ? '✋' : '✏️') + (compact ? '' : (state.mode === 'free' ? ' Stop' : ' Libre')) + '</button>' +
+      '<button class="ef-btn-panel' + (n > 0 ? ' has-items' : '') + '" title="Historique">📋' + (compact ? '' : ' Historique') + (n > 0 ? ' <span class="ef-badge">' + n + '</span>' : '') + '</button>' +
       '<button class="ef-btn-help" title="Aide">?</button>' +
-      '<button class="ef-btn-close">✕</button>';
+      '<button class="ef-btn-close" title="Fermer">✕</button>';
     toolbar.querySelector('.ef-btn-select').onclick = function() { setMode(state.mode === 'select' ? null : 'select'); };
     toolbar.querySelector('.ef-btn-free').onclick   = function() { setMode(state.mode === 'free' ? null : 'free'); };
     toolbar.querySelector('.ef-btn-panel').onclick  = togglePanel;
     toolbar.querySelector('.ef-btn-help').onclick   = showHelp;
     toolbar.querySelector('.ef-btn-close').onclick  = destroy;
+    var btnPause = toolbar.querySelector('.ef-btn-pause');
+    if (btnPause) btnPause.onclick = toggleSelectPause;
+    // Re-bind drag handle après chaque re-render
+    var handle = toolbar.querySelector('.ef-drag-handle');
+    if (handle) {
+      handle.addEventListener('mousedown', onDragStart);
+      handle.addEventListener('touchstart', onDragStart, { passive: false });
+    }
+  }
+
+  // ─── Drag toolbar ─────────────────────────────────────────────────────────
+  function applyToolbarPos(x, y) {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    x = Math.max(0, Math.min(x, vw - tw));
+    y = Math.max(0, Math.min(y, vh - th));
+    toolbar.style.left   = x + 'px';
+    toolbar.style.top    = y + 'px';
+    toolbar.style.right  = 'auto';
+    toolbar.style.bottom = 'auto';
+  }
+  function initToolbarPos() {
+    // Toujours démarrer en bas-droite
+    toolbar.style.right  = '24px';
+    toolbar.style.bottom = '24px';
+    toolbar.style.left   = 'auto';
+    toolbar.style.top    = 'auto';
+  }
+  function onDragStart(e) {
+    e.preventDefault();
+    var rect = toolbar.getBoundingClientRect();
+    if (toolbar.style.left === '' || toolbar.style.left === 'auto') {
+      toolbar.style.left   = rect.left + 'px';
+      toolbar.style.top    = rect.top  + 'px';
+      toolbar.style.right  = 'auto';
+      toolbar.style.bottom = 'auto';
+    }
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    var ox = clientX - rect.left, oy = clientY - rect.top;
+    function onMove(e) {
+      var cx = e.touches ? e.touches[0].clientX : e.clientX;
+      var cy = e.touches ? e.touches[0].clientY : e.clientY;
+      applyToolbarPos(cx - ox, cy - oy);
+    }
+    function onUp() {
+      document.removeEventListener('mousemove',  onMove, true);
+      document.removeEventListener('mouseup',    onUp,   true);
+      document.removeEventListener('touchmove',  onMove, true);
+      document.removeEventListener('touchend',   onUp,   true);
+    }
+    document.addEventListener('mousemove',  onMove, true);
+    document.addEventListener('mouseup',    onUp,   true);
+    document.addEventListener('touchmove',  onMove, { capture: true, passive: false });
+    document.addEventListener('touchend',   onUp,   true);
   }
 
   // ─── Modes ────────────────────────────────────────────────────────────────
@@ -213,10 +287,13 @@
 
   function setMode(newMode) {
     if (state.mode === 'select') {
-      document.removeEventListener('mouseover', onSelectOver, true);
-      document.removeEventListener('mouseout',  onSelectOut,  true);
-      document.removeEventListener('click',     onSelectClick, true);
+      document.removeEventListener('mouseover',  onSelectOver,  true);
+      document.removeEventListener('mouseout',   onSelectOut,   true);
+      document.removeEventListener('mousemove',  onSelectMove,  true);
+      document.removeEventListener('click',      onSelectClick, true);
       if (hovered) { hovered.classList.remove('__ef-hover__'); hovered = null; }
+      hideTooltip();
+      state.selectPaused = false;
       clearBasket();
     }
     if (state.mode === 'free') {
@@ -225,9 +302,10 @@
     }
     state.mode = newMode;
     if (state.mode === 'select') {
-      document.addEventListener('mouseover', onSelectOver, true);
-      document.addEventListener('mouseout',  onSelectOut,  true);
-      document.addEventListener('click',     onSelectClick, true);
+      document.addEventListener('mouseover',  onSelectOver,  true);
+      document.addEventListener('mouseout',   onSelectOut,   true);
+      document.addEventListener('mousemove',  onSelectMove,  true);
+      document.addEventListener('click',      onSelectClick, true);
     }
     if (state.mode === 'free') {
       document.addEventListener('click', onFreeClick, true);
@@ -236,17 +314,139 @@
     renderToolbar();
   }
 
+  function toggleSelectPause() {
+    state.selectPaused = !state.selectPaused;
+    if (state.selectPaused && hovered) { hovered.classList.remove('__ef-hover__'); hovered = null; }
+    if (state.selectPaused) hideTooltip();
+    renderToolbar();
+  }
+
+  // Touches clavier en mode sélection
+  document.addEventListener('keydown', function(e) {
+    if (state.mode !== 'select' || document.getElementById('__ef-modal__') || document.getElementById('__ef-help__')) return;
+    if (e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      toggleSelectPause();
+    }
+    if (state.selectPaused || !hovered) return;
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      var parent = hovered.parentElement;
+      if (parent && parent !== document.body && parent !== document.documentElement) {
+        hovered.classList.remove('__ef-hover__');
+        hovered = parent;
+        hovered.classList.add('__ef-hover__');
+        var r = hovered.getBoundingClientRect();
+        showTooltip(hovered, r.left + r.width / 2, r.top);
+      }
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      var child = hovered.firstElementChild;
+      if (child) {
+        hovered.classList.remove('__ef-hover__');
+        hovered = child;
+        hovered.classList.add('__ef-hover__');
+        var r = hovered.getBoundingClientRect();
+        showTooltip(hovered, r.left + r.width / 2, r.top);
+      }
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      var prev = hovered.previousElementSibling;
+      if (prev) {
+        hovered.classList.remove('__ef-hover__');
+        hovered = prev;
+        hovered.classList.add('__ef-hover__');
+        var r = hovered.getBoundingClientRect();
+        showTooltip(hovered, r.left + r.width / 2, r.top);
+      }
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      var next = hovered.nextElementSibling;
+      if (next) {
+        hovered.classList.remove('__ef-hover__');
+        hovered = next;
+        hovered.classList.add('__ef-hover__');
+        var r = hovered.getBoundingClientRect();
+        showTooltip(hovered, r.left + r.width / 2, r.top);
+      }
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (hovered) {
+        var idx = state.basket.findIndex(function(b){ return b.el === hovered; });
+        if (idx > -1) {
+          hovered.classList.remove('__ef-selected__');
+          state.basket.splice(idx, 1);
+        } else {
+          hovered.classList.add('__ef-selected__');
+          var r = hovered.getBoundingClientRect();
+          state.basket.push({ el: hovered, component: getAngularComponent(hovered) || hovered.tagName.toLowerCase(), cssPath: getCssPath(hovered), snippet: getSnippet(hovered), x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) });
+        }
+        renderBasket();
+      }
+    }
+  }, true);
+
+  function getLocalPath(el) {
+    // Chemin depuis le composant Angular ancêtre le plus proche (inclus) jusqu'à el
+    var parts = [], cur = el;
+    while (cur && cur !== document.body) {
+      var tag = cur.tagName.toLowerCase();
+      if (cur !== el && tag.indexOf('-') > -1) break; // on s'arrête AVANT le composant Angular ancêtre
+      var cls = [].slice.call(cur.classList).filter(function(c){ return c.indexOf('__ef') === -1; }).slice(0, 2).join('.');
+      parts.unshift(cls ? tag + '.' + cls : tag);
+      cur = cur.parentElement;
+    }
+    return parts.join(' > ');
+  }
+
+  var tooltip = null;
+  function showTooltip(el, x, y) {
+    if (!tooltip) { tooltip = document.createElement('div'); tooltip.id = '__ef-tooltip__'; document.body.appendChild(tooltip); }
+    var comp = getAngularComponent(el);
+    var tag  = el.tagName.toLowerCase();
+    var cls  = [].slice.call(el.classList).filter(function(c){ return c.indexOf('__ef') === -1; }).slice(0, 2).join('.');
+    var name = comp ? comp : (cls ? tag + '.' + cls : tag);
+    var path = getLocalPath(el);
+    tooltip.innerHTML = '<span style="color:#a5b4fc">' + escHtml(name) + '</span>' + (path && path !== name ? '<br><span style="color:#64748b;font-weight:400">' + escHtml(path) + '</span>' : '');
+    // Mesurer après injection puis clamper sur les 4 bords
+    tooltip.style.left = '0px'; tooltip.style.top = '0px';
+    var tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+    var vw = window.innerWidth, vh = window.innerHeight, gap = 8;
+    var tx = x + 24, ty = y - 52;
+    if (tx + tw + gap > vw) tx = x - tw - 16;   // déborde à droite → passer à gauche
+    if (tx < gap)           tx = gap;             // déborde à gauche
+    if (ty < gap)           ty = y + 32;          // déborde en haut → passer en bas
+    if (ty + th + gap > vh) ty = vh - th - gap;   // déborde en bas
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top  = ty + 'px';
+  }
+  function hideTooltip() {
+    if (tooltip) { tooltip.remove(); tooltip = null; }
+  }
+
   function onSelectOver(e) {
-    if (e.target.closest('#__ef-toolbar__') || e.target.closest('#__ef-modal__') || e.target.closest('#__ef-panel__') || e.target.closest('#__ef-basket__') || e.target.closest('#__ef-draft-chip__')) return;
+    if (e.target.closest('#__ef-toolbar__') || e.target.closest('#__ef-modal__') || e.target.closest('#__ef-panel__') || e.target.closest('#__ef-basket__') || e.target.closest('#__ef-draft-chip__')) { hideTooltip(); return; }
+    if (state.selectPaused) return;
     if (hovered) hovered.classList.remove('__ef-hover__');
     hovered = e.target;
     hovered.classList.add('__ef-hover__');
+    showTooltip(hovered, e.clientX, e.clientY);
   }
   function onSelectOut() {
     if (hovered) { hovered.classList.remove('__ef-hover__'); hovered = null; }
+    hideTooltip();
+  }
+  function onSelectMove(e) {
+    if (state.selectPaused) return;
+    if (tooltip && hovered) showTooltip(hovered, e.clientX, e.clientY);
   }
   function onSelectClick(e) {
     if (e.target.closest('#__ef-toolbar__') || e.target.closest('#__ef-modal__') || e.target.closest('#__ef-panel__') || e.target.closest('#__ef-basket__') || e.target.closest('#__ef-draft-chip__')) return;
+    if (state.selectPaused) return;
     e.preventDefault(); e.stopPropagation();
     var el = e.target;
     if (hovered) { hovered.classList.remove('__ef-hover__'); hovered = null; }
@@ -759,6 +959,7 @@
         '<div class="ef-help-row"><span class="ef-help-icon">🎯</span><div class="ef-help-text"><strong>Composant</strong> — survolez la page pour cibler des éléments. Cliquez pour les ajouter au panier. Vous pouvez sélectionner <em>plusieurs composants</em> puis confirmer avec <kbd>✏️ Feedback</kbd>. Recliquez un composant sélectionné pour le retirer.</div></div>' +
         '<div class="ef-help-row"><span class="ef-help-icon">✏️</span><div class="ef-help-text"><strong>Libre</strong> — cliquez n\'importe où sur la page pour annoter une position précise (coordonnées X/Y enregistrées).</div></div>' +
         '<div class="ef-help-row"><span class="ef-help-icon">✋</span><div class="ef-help-text"><strong>Stop</strong> — recliquez le bouton actif pour quitter le mode de saisie.</div></div>' +
+        '<div class="ef-help-row"><span class="ef-help-icon">⏸</span><div class="ef-help-text"><strong>Pause</strong> — en mode Composant, cliquez <kbd>⏸ Pause</kbd> ou appuyez sur <kbd>P</kbd> pour naviguer librement sur la page (liens cliquables, scroll). Les surlignages restent inactifs. Appuyez à nouveau sur <kbd>P</kbd> ou <kbd>▶ Reprendre</kbd> pour reprendre la sélection.</div></div>' +
 
         '<div class="ef-help-sep"></div>' +
 
@@ -792,7 +993,22 @@
   }
 
   // ─── Destroy / Toggle ─────────────────────────────────────────────────────
-  function toggle() { toolbar.style.display = toolbar.style.display === 'none' ? '' : 'none'; }
+  function toggle() {
+    if (toolbar.style.display === 'none') {
+      toolbar.style.display = '';
+      // Réinitialisation complète de l'interface
+      setMode(null);
+      state.draft = null;
+      removeDraftChip();
+      state.panelOpen = false;
+      var p = document.getElementById('__ef-panel__'); if (p) p.remove();
+      var h = document.getElementById('__ef-help__');  if (h) h.remove();
+      renderToolbar();
+      initToolbarPos();
+    } else {
+      toolbar.style.display = 'none';
+    }
+  }
 
   function destroy() {
     setMode(null);
@@ -806,4 +1022,5 @@
 
   window.__enpiceFeedback__ = { destroy: destroy, toggle: toggle };
   renderToolbar();
+  initToolbarPos();
 })();

@@ -155,6 +155,7 @@ La toolbar apparaît en **bas à droite** de la page.
 | ✏️ **Libre** | Mode annotation libre (position X/Y) |
 | 📋 **Historique** | Ouvre/ferme le panneau d'annotations |
 | **?** | Affiche l'aide intégrée |
+| **⏸ Pause** | Pause la sélection pour naviguer librement (mode Composant uniquement) |
 | **✕** | Ferme et retire complètement l'outil |
 
 ---
@@ -171,6 +172,13 @@ Permet de cibler précisément un ou plusieurs éléments de la page.
 6. Le panier apparaît **en bas au centre** avec le nombre de composants sélectionnés
 7. Cliquer **✏️ Feedback** dans le panier → ouvre le formulaire
 8. Cliquer **✕** dans le panier → vide la sélection
+
+**Naviguer en cours de sélection :**
+
+Appuyer sur `P` ou cliquer **⏸ Pause** dans la toolbar pour suspendre la sélection.
+Les clics redeviennent normaux (liens, boutons) — vous pouvez changer de page ou faire défiler.
+Appuyer à nouveau sur `P` ou cliquer **▶ Reprendre** pour revenir en mode sélection.
+Le panier (composants déjà sélectionnés) est conservé pendant la pause.
 
 > Le composant Angular est automatiquement détecté (ex : `app-kpi-card`).
 > Si aucun composant Angular n'est trouvé, le tag HTML est utilisé.
@@ -282,6 +290,7 @@ Les pastilles disparaissent quand l'outil est fermé (✕) et réapparaissent au
 | Raccourci | Action |
 |-----------|--------|
 | `⌥ F` | Afficher / masquer la toolbar (extension Chrome) |
+| `P` | Pause / reprendre la sélection (mode Composant uniquement) |
 | `Échap` | Réduire le formulaire en draft |
 | `⌘ Entrée` / `Ctrl Entrée` | Sauvegarder depuis le formulaire |
 
