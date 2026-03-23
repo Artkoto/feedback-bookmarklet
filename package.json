@@ -4,7 +4,8 @@
   "description": "Bookmarklet de feedback visuel — cliquer sur un composant, commenter, copier",
   "scripts": {
     "build": "node build.js",
-    "serve": "node server.js"
+    "serve": "node server.js",
+    "sync": "cp feedback.js chrome-extension/feedback.js && echo 'feedback.js copié dans chrome-extension/'"
   },
   "private": true,
   "devDependencies": {
