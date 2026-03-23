@@ -59,6 +59,7 @@ Laissez-le actif pendant vos sessions de feedback.
 ### 2. Extension Chrome *(recommandé)*
 
 L'extension injecte l'outil via un raccourci clavier sans toucher à la barre des favoris.
+`feedback.js` est bundlé directement dans l'extension — **aucun serveur requis**.
 
 **Installation :**
 
@@ -68,11 +69,17 @@ L'extension injecte l'outil via un raccourci clavier sans toucher à la barre de
 4. Sélectionner le dossier `chrome-extension/`
 5. L'extension apparaît dans la liste
 
-**Raccourci clavier :**
+**Raccourcis clavier :**
 
-Le raccourci par défaut est `⌥ F` (Option + F sur Mac / Alt + F sur Windows/Linux).
+| Plateforme | Raccourci |
+|------------|-----------|
+| Mac | `⌥ F` (Option + F) |
+| Windows | `Ctrl+Shift+F` |
+| Linux | `Ctrl+Shift+F` |
 
 > Sur Mac, la touche **Option** est la touche `⌥` (à gauche de la barre d'espace, à côté de `Cmd`).
+>
+> `Alt+F` est réservé sur Windows et Linux (menu fichier du navigateur), d'où l'utilisation de `Ctrl+Shift+F`.
 
 Pour personnaliser le raccourci :
 1. Aller sur `chrome://extensions/shortcuts`
@@ -82,8 +89,15 @@ Pour personnaliser le raccourci :
 **Fonctionnement :**
 
 - Premier appui → injecte et affiche la toolbar
-- Appuis suivants → affiche / masque la toolbar (l'état est préservé)
-- Le serveur local doit être actif (`npm run serve`)
+- Appuis suivants → affiche / masque la toolbar et réinitialise la position
+
+**Mise à jour de l'extension après modification de `feedback.js` :**
+
+```bash
+npm run sync   # copie feedback.js dans chrome-extension/
+```
+
+Puis recharger l'extension dans `chrome://extensions/` (icône de rechargement).
 
 ---
 
@@ -131,9 +145,8 @@ Pour un chargement automatique sur vos pages de développement local.
 ## Démarrage rapide
 
 ```
-1. npm run serve          ← démarrer le serveur
-2. Ouvrir votre app web
-3. Appuyer sur ⌥F         ← activer la toolbar
+1. Ouvrir votre app web
+2. Appuyer sur ⌥F (Mac) ou Ctrl+Shift+F (Win/Linux)  ← activer la toolbar
 4. Cliquer 🎯 Composant   ← entrer en mode sélection
 5. Cliquer un élément     ← le cibler
 6. Cliquer ✏️ Feedback    ← ouvrir le formulaire
@@ -289,7 +302,8 @@ Les pastilles disparaissent quand l'outil est fermé (✕) et réapparaissent au
 
 | Raccourci | Action |
 |-----------|--------|
-| `⌥ F` | Afficher / masquer la toolbar (extension Chrome) |
+| `⌥ F` | Afficher / masquer la toolbar — Mac (extension Chrome) |
+| `Ctrl+Shift+F` | Afficher / masquer la toolbar — Windows / Linux (extension Chrome) |
 | `P` | Pause / reprendre la sélection (mode Composant uniquement) |
 | `Échap` | Réduire le formulaire en draft |
 | `⌘ Entrée` / `Ctrl Entrée` | Sauvegarder depuis le formulaire |
