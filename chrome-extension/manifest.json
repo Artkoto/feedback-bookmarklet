@@ -11,8 +11,10 @@
   "commands": {
     "toggle-feedback": {
       "suggested_key": {
-        "default": "Alt+F",
-        "mac": "Alt+F"
+        "default": "Ctrl+Shift+F",
+        "mac": "Alt+F",
+        "windows": "Ctrl+Shift+F",
+        "linux": "Ctrl+Shift+F"
       },
       "description": "Afficher / masquer l'outil de feedback"
     }
